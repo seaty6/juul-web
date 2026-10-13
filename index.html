@@ -14,6 +14,7 @@
   .brand{display:flex;align-items:center;gap:12px}.logo{width:38px;height:38px;border-radius:10px;background:#111;color:#fff;display:grid;place-items:center;font-weight:800;letter-spacing:.12em;font-size:12px}
   .brand h1{font-size:16px;margin:0;letter-spacing:.08em}.brand p{margin:0;color:var(--muted);font-size:12px}
   .pill{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);background:#fff;border-radius:999px;padding:6px 10px;font-size:12px}
+  .header-actions{justify-content:flex-end}.github-button{color:var(--ink);text-decoration:none;font-weight:600;white-space:nowrap}.github-button:hover{background:#eee}.github-button:focus-visible{outline:2px solid var(--blue);outline-offset:3px}
   .dot{width:8px;height:8px;border-radius:50%;background:#bbb}.dot.on{background:var(--green)}.dot.demo{background:var(--amber)}
   .grid{display:grid;grid-template-columns:1.2fr .8fr;gap:14px}@media(max-width:860px){.grid{grid-template-columns:1fr}}
   .card{background:var(--card);border:1px solid var(--line);border-radius:var(--radius);padding:16px}
@@ -39,12 +40,13 @@
   .telemetry-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px}@media(max-width:700px){.telemetry-grid{grid-template-columns:1fr}}
   .telemetry-table td{overflow-wrap:anywhere}.telemetry-raw{white-space:pre-wrap;overflow-wrap:anywhere;max-height:300px;overflow:auto;font-size:12px;background:#f6f6f4;padding:12px;border-radius:10px}
   .telemetry-scroll{overflow:auto;max-height:430px}.sample-chart{display:block;width:220px;height:56px;margin:6px 0}.telemetry-table details summary{cursor:pointer}
+  .credential-guide{margin-top:12px}.credential-guide summary{cursor:pointer;font-weight:600}.credential-guide ol{padding-left:22px;font-size:13px;line-height:1.6}.credential-guide li{margin:8px 0}.credential-code{display:block;max-height:260px;overflow:auto;white-space:pre;font-size:11px;padding:12px;background:#f6f6f4;border:1px solid var(--line);border-radius:10px}
 </style>
 </head>
 <body>
 <header><div class="wrap topbar">
   <div class="brand"><div class="logo">JUUL</div><div><h1>JUUL WEB</h1><p>Device companion — Web Bluetooth clone</p></div></div>
-  <div class="row"><span class="pill"><span id="connDot" class="dot"></span><span id="connText">Not connected</span></span><span class="pill" id="bleSupportPill">Checking Bluetooth…</span></div>
+  <div class="row header-actions"><span class="pill"><span id="connDot" class="dot"></span><span id="connText">Not connected</span></span><span class="pill" id="bleSupportPill">Checking Bluetooth…</span><a class="pill github-button" href="https://github.com/seaty6/juul-web" target="_blank" rel="noopener noreferrer" aria-label="View JUUL Web on GitHub (opens in a new tab)">GitHub ↗</a></div>
 </div></header>
 
 <main class="wrap">
@@ -88,6 +90,22 @@
         <div class="row"><button id="btnImportKey">Import credential JSON</button><button id="btnForgetKey" disabled>Forget key</button></div>
         <input id="credentialFile" type="file" accept=".json,application/json" hidden>
         <p class="note">The file stays on this device. Your browser stores the verified key locally; it is never uploaded. Close the official JUUL app while using this page.</p>
+        <details class="credential-guide" id="credentialGuide">
+          <summary>How to extract your credential JSON</summary>
+          <p class="note">Use the official JUUL web app with your own account and paired JUUL2 in desktop Chrome or Edge. If you already saved juulKeyCapture.json, import that file above.</p>
+          <ol>
+            <li><strong>Open the official web app.</strong> Sign in normally. Disconnect this companion from Bluetooth, and leave the device disconnected in the official app until the capture helper is installed.</li>
+            <li><strong>Open the official app’s developer console.</strong> Press <code>Ctrl+Shift+J</code> on Windows/Linux or <code>⌘+Option+J</code> on Mac. Copy the helper below, review it, then run it in that console. It should say “JUUL capture installed”. Run it in the official app’s tab.</li>
+            <li><strong>Connect and ring once in the official app.</strong> Wake your JUUL, connect it there, and use its Find/ring control. The console should say “JUUL ring credential captured”. The helper observes local encryption; it sends no Bluetooth commands and uploads nothing.</li>
+            <li><strong>Save the JSON.</strong> In the same console run <code>juulKeyCapture.save()</code>. This downloads <strong>juulKeyCapture.json</strong>. To check progress without displaying your key, run <code>juulKeyCapture.samples.length</code>.</li>
+            <li><strong>Return here and import it.</strong> Close the official app’s tab, tap <strong>Import credential JSON</strong>, select the downloaded file, then tap <strong>Connect JUUL</strong>. Your current device uses the prefilled Key ID <code>9d87ca9f</code>; another device may need its own matching Key ID.</li>
+          </ol>
+          <div class="row"><button id="btnCopyCaptureHelper">Copy capture helper</button><button id="btnDownloadCaptureHelper">Download helper .js</button></div>
+          <p class="note" id="captureHelperStatus" role="status">This is an independently written capture helper. The code below runs only when you paste it into the official app.</p>
+          <pre id="credentialCaptureCode" class="credential-code" aria-label="Credential capture helper code"></pre>
+          <p class="note"><strong>If nothing is captured:</strong> disconnect and reconnect in the official app with the helper installed, then ring again. The helper must see the key being imported; it cannot recover a key imported before installation. Reloading the official page removes the helper, so install it again before connecting. If your browser blocks console pasting, review the code and follow its displayed developer-console prompt; you can also use the downloaded file in DevTools → Sources → Snippets.</p>
+          <p class="note"><strong>Keep the JSON private:</strong> it contains the device encryption key. Store it outside a served website folder and do not share it as a diagnostic log. A BLE event log or telemetry export is not a credential file. Run <code>juulKeyCapture.restore()</code> to remove the helper, or close the official app’s tab.</p>
+        </details>
         <details><summary class="note">Connection settings</summary><label class="note">Key ID <input id="keyIdInput" value="9d87ca9f" maxlength="8" autocomplete="off" spellcheck="false" aria-label="Credential key ID"></label></details>
       </div>
       <h3>Controls</h3>
@@ -199,12 +217,121 @@
   <div style="height:24px"></div>
 </main>
 
+<script id="credentialCaptureSnippet" type="text/plain">
+(() => {
+  if (window.juulKeyCapture?.installed) {
+    console.info('JUUL capture is already installed. Connect and ring in this tab.');
+    return;
+  }
+  const subtle = crypto.subtle;
+  const originalImport = subtle.importKey;
+  const originalEncrypt = subtle.encrypt;
+  let keys = new WeakMap();
+  const retained = new Set();
+  const bytes = value => {
+    if (ArrayBuffer.isView(value)) {
+      return new Uint8Array(value.buffer, value.byteOffset, value.byteLength).slice();
+    }
+    return new Uint8Array(value).slice();
+  };
+  const hex = value => Array.from(value, b => b.toString(16).padStart(2, '0')).join('');
+  const name = algorithm => typeof algorithm === 'string' ? algorithm : algorithm?.name;
+  const capture = {
+    installed: true,
+    samples: [],
+    save() {
+      if (!this.samples.length) {
+        console.info('No ring credential yet. Connect and ring with this helper installed.');
+        return;
+      }
+      const url = URL.createObjectURL(new Blob([JSON.stringify(this.samples, null, 2)], {type: 'application/json'}));
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = 'juulKeyCapture.json';
+      link.click();
+      setTimeout(() => URL.revokeObjectURL(url), 1000);
+      console.info('Credential JSON downloaded. Keep this file private.');
+    },
+    restore() {
+      if (subtle.importKey === importHook) subtle.importKey = originalImport;
+      if (subtle.encrypt === encryptHook) subtle.encrypt = originalEncrypt;
+      for (const raw of retained) raw.fill(0);
+      retained.clear();
+      keys = new WeakMap();
+      this.installed = false;
+      this.samples.length = 0;
+      console.info('JUUL capture removed; download your JSON before removing the helper.');
+    }
+  };
+  async function importHook(format, keyData, algorithm, extractable, usages) {
+    let raw = null;
+    try {
+      if (format === 'raw' && String(name(algorithm)).toUpperCase() === 'AES-GCM') raw = bytes(keyData);
+    } catch {}
+    try {
+      const key = await originalImport.call(this, format, keyData, algorithm, extractable, usages);
+      if (raw && capture.installed) {
+        keys.set(key, raw);
+        retained.add(raw);
+      } else if (raw) raw.fill(0);
+      return key;
+    } catch (error) {
+      if (raw) raw.fill(0);
+      throw error;
+    }
+  }
+  async function encryptHook(algorithm, key, data) {
+    let sample = null;
+    try {
+      const raw = keys.get(key);
+      if (capture.installed && raw && String(name(algorithm)).toUpperCase() === 'AES-GCM' && algorithm.additionalData) {
+        const aad = bytes(algorithm.additionalData);
+        if (new TextDecoder().decode(aad).includes('findmyjuul')) {
+          sample = {
+            time: new Date().toISOString(),
+            sharedSecretHex: hex(raw),
+            ivHex: hex(bytes(algorithm.iv)),
+            aadHex: hex(aad),
+            plaintextHex: hex(bytes(data)),
+            tagBits: algorithm.tagLength ?? 128
+          };
+        }
+      }
+    } catch {}
+    const result = await originalEncrypt.call(this, algorithm, key, data);
+    if (sample && capture.installed) {
+      try {
+        sample.ciphertextAndTagHex = hex(bytes(result));
+        capture.samples.push(sample);
+        if (capture.samples.length > 10) capture.samples.shift();
+        console.info('JUUL ring credential captured. Run juulKeyCapture.save() to download it.');
+      } catch {}
+    }
+    return result;
+  }
+  subtle.importKey = importHook;
+  subtle.encrypt = encryptHook;
+  window.juulKeyCapture = capture;
+  console.info('JUUL capture installed. Connect your device and ring once in this official-app tab.');
+})();
+</script>
 <script>
 const $=id=>document.getElementById(id);
 const logEl=$('logEl');
 function log(msg){const t=new Date().toLocaleTimeString();logEl.textContent+=`\n[${t}] ${msg}`;logEl.scrollTop=logEl.scrollHeight;}
 function hex(buf){return [...new Uint8Array(buf)].map(b=>b.toString(16).padStart(2,'0')).join(' ')}
 function text(buf){try{return new TextDecoder().decode(buf)}catch{return ''}}
+const captureHelperSource=$('credentialCaptureSnippet').textContent.trim();
+$('credentialCaptureCode').textContent=captureHelperSource;
+$('btnCopyCaptureHelper').addEventListener('click',async()=>{
+  try{await navigator.clipboard.writeText(captureHelperSource);$('captureHelperStatus').textContent='Helper copied. Run it in the official JUUL app’s developer console.';}
+  catch{$('captureHelperStatus').textContent='Clipboard unavailable. Select and copy the displayed code, or download the helper file.';}
+});
+$('btnDownloadCaptureHelper').addEventListener('click',()=>{
+  const url=URL.createObjectURL(new Blob([captureHelperSource+'\n'],{type:'text/javascript'})),link=document.createElement('a');
+  link.href=url;link.download='juul-credential-capture.js';link.click();setTimeout(()=>URL.revokeObjectURL(url),1000);
+  $('captureHelperStatus').textContent='Helper downloaded. Run its contents in the official app’s console or a DevTools Snippet.';
+});
 
 // Independently implemented from the observed JUUL2 protocol identifiers and packets.
 const J2 = (() => {
